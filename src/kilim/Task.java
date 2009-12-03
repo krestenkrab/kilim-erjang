@@ -134,9 +134,9 @@ public abstract class Task implements EventSubscriber {
     	resume();
     }
     
-    private void maybeKill() {
+    public void checkKill() {
     	if (this.death_ex != null) {
-    		System.err.println("killing "+this+": throw "+death_ex);
+    		// System.err.println("killing "+this+": throw "+death_ex);
     		throw this.death_ex;
     	}
     }
@@ -292,7 +292,7 @@ public abstract class Task implements EventSubscriber {
             f.task.setPauseReason(null);
         }
         f.togglePause();
-        f.task.maybeKill();
+        f.task.checkKill();
     }
 
     /*

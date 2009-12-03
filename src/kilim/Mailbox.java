@@ -331,6 +331,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
     public void put(T msg) throws Pausable {
         Task t = Task.getCurrentTask();
+        t.checkKill();
         while (!put(msg, t)) {
             Task.pause(this);
         }
