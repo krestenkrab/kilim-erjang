@@ -44,7 +44,7 @@ public class DumpClass implements Opcodes, ClassVisitor {
     public static void main(String[] args) throws IOException {
         String name = args.length == 2 ? args[1] : args[0];
         //int flags = args.length == 2 ? 0: ClassReader.SKIP_DEBUG;
-        int flags = ClassReader.SKIP_DEBUG; // skipdebug
+        boolean flags = false; // skipdebug
         
         if (name.endsWith(".jar")) {
             try {
@@ -66,7 +66,7 @@ public class DumpClass implements Opcodes, ClassVisitor {
     
     
 
-    DumpClass(String className, int flags) throws IOException {
+    DumpClass(String className, boolean flags) throws IOException {
         ClassReader cr;
         if (className.endsWith(".class")) {
             FileInputStream fis = new FileInputStream(className);

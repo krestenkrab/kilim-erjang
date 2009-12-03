@@ -300,7 +300,7 @@ public class CallWeaver {
      */
     void genRewind(MethodVisitor mv) {
         Frame f = bb.startFrame;
-        // Usage u = bb.usage;
+        Usage u = bb.usage;
         
         // The last parameter to the method is fiber, but the original
         // code doesn't know that and will use up that slot as it

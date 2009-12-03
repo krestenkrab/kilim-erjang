@@ -9,15 +9,14 @@ package kilim.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-
+import junit.framework.TestCase;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
 import kilim.analysis.Detector;
 import kilim.analysis.MethodFlow;
-import junit.framework.TestCase;
+
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 public class Base extends TestCase {
     private static ArrayList<MethodFlow> stflows;
@@ -69,7 +68,7 @@ public class Base extends TestCase {
         ArrayList<BasicBlock> bbs = flow.getBasicBlocks();
         // Verify that all instructions are covered and that the only ones that
         // aren't are labelnodes. Also verify that there are no overlaps.
-        InsnList instructions = flow.instructions;
+        List instructions = flow.instructions;
         int size = instructions.size();
         boolean coverage[] = new boolean[size];
         for (int i = 0; i < size; i++) {

@@ -49,7 +49,7 @@ public class ClassWeaver {
     private void weave() throws KilimException {
         classFlow.analyze(false);
         if (classFlow.isPausable() && needsWeaving()) {
-            ClassWriter cw = new ClassWriter(0);
+            ClassWriter cw = new ClassWriter(false);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -187,7 +187,7 @@ public class ClassWeaver {
             return className;
         }
         stateClasses.add(className);
-        ClassWriter cw = new ClassWriter(0);
+        ClassWriter cw = new ClassWriter(false);
         cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
         // Create default constructor

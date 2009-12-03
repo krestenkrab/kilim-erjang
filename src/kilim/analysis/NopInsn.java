@@ -27,13 +27,4 @@ class NopInsn extends AbstractInsnNode {
     public void accept(MethodVisitor mv) {
         // Do nothing
     }
-
-	/* (non-Javadoc)
-	 * @see org.objectweb.asm.tree.AbstractInsnNode#clone(java.util.Map)
-	 */
-	@Override
-	public AbstractInsnNode clone(Map labels) {
-		// TODO Auto-generated method stub
-		return this;
-	}
 }

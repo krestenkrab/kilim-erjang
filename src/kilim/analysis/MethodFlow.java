@@ -175,15 +175,6 @@ public class MethodFlow extends MethodNode {
         return className.replace('/', '.') + '.' + methName + desc;
     }
     
-    /* (non-Javadoc)
-     * @see org.objectweb.asm.tree.MethodNode#visitLineNumber(int, org.objectweb.asm.Label)
-     */
-    @Override
-    public void visitLineNumber(int line, Label start) {
-    	// TODO Auto-generated method stub
-    	super.visitLineNumber(line, start);
-    }
-    
     @Override
     public void visitLabel(Label label) {
 //        if (hasPausableAnnotation)
@@ -286,7 +277,7 @@ public class MethodFlow extends MethodNode {
                     getLabelPosition(tcb.start),
                     getLabelPosition(tcb.end) - 1, // end is inclusive
                     tcb.type, 
-                    getOrCreateBasicBlock(tcb.handler.getLabel())));
+                    getOrCreateBasicBlock(tcb.handler)));
         }
         for (BasicBlock bb : basicBlocks) {
             bb.chooseCatchHandlers(handlers);
@@ -404,10 +395,6 @@ public class MethodFlow extends MethodNode {
             setLabel(pos, ret);
         }
         return ret;
-    }
-    
-    int getLabelPosition(LabelNode l) {
-        return labelToPosMap.get(l.getLabel());
     }
     
     int getLabelPosition(Label l) {
@@ -532,12 +519,10 @@ public class MethodFlow extends MethodNode {
                 ((LocalVariableNode) localVariables.get(i)).accept(mv);
             }
             // visits line numbers
-            /*
             n = lineNumbers == null ? 0 : lineNumbers.size();
             for (i = 0; i < n; ++i) {
                 ((LineNumberNode) lineNumbers.get(i)).accept(mv);
             }
-            */
             // visits maxs
             mv.visitMaxs(maxStack, maxLocals);
         }
