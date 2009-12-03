@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <project name="kilim" default="all">
+  <property name="kilim.version" value="0.6-krab" />
   <path id="kilim.classpath">
     <pathelement location="classes/" />
     <fileset dir="./libs">
@@ -124,7 +125,7 @@
 
   <target name="jar" description="generate the distribution">
     <copy file="License" todir="classes/kilim" />
-    <jar jarfile="kilim.jar" basedir="classes">
+    <jar jarfile="kilim-${kilim.version}.jar" basedir="classes">
       <zipgroupfileset dir="libs" includes="*.jar">
 	<exclude name="junit.jar" />
       </zipgroupfileset>
@@ -135,7 +136,7 @@
 	<attribute name="Main-Class" value="kilim.tools.Weaver"/>
       </manifest>	
     </jar>
-    <jar jarfile="kilim-runtime.jar" basedir="classes">
+    <jar jarfile="kilim-runtime-${kilim.version}.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
