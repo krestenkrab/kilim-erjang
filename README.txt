@@ -1,4 +1,11 @@
-Kilim v0.5 
+== UNOFFICIAL KILIM VERSION BY KRESTEN KRAB THORUP ==
+
+- some performance optimizations
+- generalized mechanism for finding .class files
+- make it compile with java 1.5 
+
+
+Kilim v0.6 
 Copyright (c) 2006 Sriram Srinivasan.
 (kilim _at_ malhar.net)
 ======================================================================
