@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 
@@ -34,16 +35,25 @@ public class ClassFlow extends ClassNode {
      * true if the .class being read is already woven.
      */
     public boolean isWoven = false;
+	private Detector detector;
     
-    public ClassFlow(InputStream is) throws IOException {
+    public ClassFlow(InputStream is, Detector detector) throws IOException {
         cr = new ClassReader(is);
+    	this.detector = detector;
     }
     
-    public ClassFlow(String aClassName) throws IOException {
+    public ClassFlow(String aClassName, Detector detector) throws IOException {
         cr = new ClassReader(aClassName);
+    	this.detector = detector;
     }
     
-    @SuppressWarnings({"unchecked"})
+    public ClassFlow(byte[] data, Detector detector) {
+    	cr = new ClassReader(data);
+    	this.detector = detector;
+	}
+
+	@Override
+	@SuppressWarnings({"unchecked"})
     public MethodVisitor visitMethod(
             final int access,
             final String name,
@@ -52,7 +62,7 @@ public class ClassFlow extends ClassNode {
             final String[] exceptions)
     {
         MethodFlow mn = new MethodFlow( this, access, name,  desc, signature,
-                exceptions);
+                exceptions, detector);
         super.methods.add(mn);
         return mn;
     }
@@ -62,9 +72,9 @@ public class ClassFlow extends ClassNode {
         return methodFlows;
     }
 
-    public ArrayList<MethodFlow> analyze(boolean forceAnalysis) throws KilimException {
+	public ArrayList<MethodFlow> analyze(boolean forceAnalysis) throws KilimException {
 //        cr.accept(this, ClassReader.SKIP_DEBUG);
-        cr.accept(this, false);
+        cr.accept(this, 0);
         for (Object o: this.fields) {
             FieldNode fn = (FieldNode)o;
             if (fn.name.equals(Constants.WOVEN_FIELD)) {
@@ -127,6 +137,10 @@ public class ClassFlow extends ClassNode {
     
  
      boolean isInterface() {
-        return (this.access & Constants.ACC_INTERFACE) != 0;
+        return (this.access & Opcodes.ACC_INTERFACE) != 0;
     }
+
+	public Detector detector() {
+		return detector;
+	}
 }

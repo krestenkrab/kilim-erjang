@@ -10,10 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
+import kilim.analysis.Detector;
 import kilim.analysis.MethodFlow;
 import junit.framework.TestCase;
 
@@ -23,7 +25,7 @@ public class Base extends TestCase {
 
     protected void cache(String className) throws Exception {
         if (lastClassName != className) {
-            ClassFlow cf = new ClassFlow(className);
+            ClassFlow cf = new ClassFlow(className, Detector.DEFAULT);
             stflows = cf.analyze(/* forceAnalysis = */true);
             lastClassName = className;
         }
@@ -67,7 +69,7 @@ public class Base extends TestCase {
         ArrayList<BasicBlock> bbs = flow.getBasicBlocks();
         // Verify that all instructions are covered and that the only ones that
         // aren't are labelnodes. Also verify that there are no overlaps.
-        List instructions = flow.instructions;
+        InsnList instructions = flow.instructions;
         int size = instructions.size();
         boolean coverage[] = new boolean[size];
         for (int i = 0; i < size; i++) {

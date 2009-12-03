@@ -56,7 +56,7 @@ public class TypeDesc {
     }
     
     public static String getInterned(String desc) {
-        String ret = (String)knownTypes.get(desc);
+        String ret = knownTypes.get(desc);
         if (ret == null) {
             switch (desc.charAt(0)) {
                 case 'L':
@@ -218,8 +218,8 @@ public class TypeDesc {
             
             String a = toClassName(oa);
             String b = toClassName(ob);
-            Class ca = Class.forName(a);
-            Class cb = Class.forName(b);
+            Class<?> ca = Class.forName(a);
+            Class<?> cb = Class.forName(b);
             if (ca.isAssignableFrom(cb)) return oa;
             if (cb.isAssignableFrom(ca)) return ob;
             if (ca.isInterface() && cb.isInterface()) {
@@ -243,7 +243,7 @@ public class TypeDesc {
         }
     }
     
-    private static ArrayList<String> getSuperClasses(Class c) {
+    private static ArrayList<String> getSuperClasses(Class<?> c) {
         ArrayList<String> ret = new ArrayList<String>(3);
         while (c != null) {
             ret.add(c.getName());

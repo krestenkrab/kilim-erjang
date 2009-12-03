@@ -111,7 +111,8 @@ public class Usage {
         this.def.or(succ.def);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("use");
         printBits(sb, use);

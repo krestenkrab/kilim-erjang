@@ -89,7 +89,7 @@ public class Asm {
     public Asm(String afileName) throws IOException {
         fileName = afileName;
         reader = new LineNumberReader(new FileReader(fileName));
-        cv = new ClassWriter(false);
+        cv = new ClassWriter(0);
         try {
             parseClass();
         } catch (EOF eof) {

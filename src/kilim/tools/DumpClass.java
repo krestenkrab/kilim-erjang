@@ -17,6 +17,7 @@ import java.lang.reflect.Modifier;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -43,11 +44,11 @@ public class DumpClass implements Opcodes, ClassVisitor {
     public static void main(String[] args) throws IOException {
         String name = args.length == 2 ? args[1] : args[0];
         //int flags = args.length == 2 ? 0: ClassReader.SKIP_DEBUG;
-        boolean flags = false; // skipdebug
+        int flags = ClassReader.SKIP_DEBUG; // skipdebug
         
         if (name.endsWith(".jar")) {
             try {
-                Enumeration e = new JarFile(name).entries();
+                Enumeration<JarEntry> e = new JarFile(name).entries();
                 while (e.hasMoreElements()) {
                     ZipEntry en = (ZipEntry) e.nextElement();
                     String n = en.getName();
@@ -65,7 +66,7 @@ public class DumpClass implements Opcodes, ClassVisitor {
     
     
 
-    DumpClass(String className, boolean flags) throws IOException {
+    DumpClass(String className, int flags) throws IOException {
         ClassReader cr;
         if (className.endsWith(".class")) {
             FileInputStream fis = new FileInputStream(className);

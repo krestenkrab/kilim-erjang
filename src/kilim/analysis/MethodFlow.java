@@ -28,8 +28,10 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -42,6 +44,7 @@ import org.objectweb.asm.tree.TryCatchBlockNode;
  */
 public class MethodFlow extends MethodNode {
     
+	
     /**
      * The classFlow to which this methodFlow belongs
      */
@@ -80,6 +83,8 @@ public class MethodFlow extends MethodNode {
     private boolean suppressPausableCheck;
 
     private List<MethodInsnNode> pausableMethods = new LinkedList<MethodInsnNode>();
+
+	private final Detector detector;
     
     public MethodFlow(
             ClassFlow classFlow,
@@ -87,9 +92,11 @@ public class MethodFlow extends MethodNode {
             final String name,
             final String desc,
             final String signature,
-            final String[] exceptions) {
+            final String[] exceptions,
+            final Detector detector) {
         super(access, name, desc, signature, exceptions);
         this.classFlow = classFlow;
+        this.detector = detector;
         int numInstructions = instructions.size();
         posToLabelMap = new ArrayList<Label>(numInstructions);
         for (int i = numInstructions - 1 ; i >= 0; i--) {
@@ -149,7 +156,7 @@ public class MethodFlow extends MethodNode {
     }
 
     private void checkStatus(String superClassName, String methodName, String desc) throws KilimException {
-        int status = Detector.getPausableStatus(superClassName, methodName, desc);
+        int status = detector.getPausableStatus(superClassName, methodName, desc);
         if ((status == Detector.PAUSABLE_METHOD_FOUND && !hasPausableAnnotation)) {
             throw new KilimException("Base class method is pausable, derived class is not: " +
                     "\nBase class = " + superClassName +
@@ -166,6 +173,15 @@ public class MethodFlow extends MethodNode {
 
     private String toString(String className, String methName, String desc) {
         return className.replace('/', '.') + '.' + methName + desc;
+    }
+    
+    /* (non-Javadoc)
+     * @see org.objectweb.asm.tree.MethodNode#visitLineNumber(int, org.objectweb.asm.Label)
+     */
+    @Override
+    public void visitLineNumber(int line, Label start) {
+    	// TODO Auto-generated method stub
+    	super.visitLineNumber(line, start);
     }
     
     @Override
@@ -193,9 +209,9 @@ public class MethodFlow extends MethodNode {
         // method call sites. If the class is already woven, we don't need this 
         // functionality.
         if (!classFlow.isWoven) {
-            int methodStatus = Detector.getPausableStatus(owner, name, desc);
+            int methodStatus = detector.getPausableStatus(owner, name, desc);
             if (methodStatus == Detector.METHOD_NOT_FOUND) {
-                throw new KilimException("Check classpath. Method " + owner + name + desc + " could not be located");
+                throw new KilimException("Check classpath. Method " + owner + "." + name + desc + " could not be located");
             } else if (methodStatus == Detector.PAUSABLE_METHOD_FOUND) {
                 MethodInsnNode min = (MethodInsnNode)instructions.get(instructions.size()-1);
                 pausableMethods.add(min);
@@ -245,7 +261,8 @@ public class MethodFlow extends MethodNode {
         return pausableMethods.contains(min);
     }
     
-    public String toString() {
+    @Override
+	public String toString() {
         ArrayList<BasicBlock> ret = getBasicBlocks();
         Collections.sort(ret);
         return ret.toString();
@@ -255,20 +272,21 @@ public class MethodFlow extends MethodNode {
         return basicBlocks;
     }
     
-    private void assignCatchHandlers() {
-        ArrayList tcbs = (ArrayList) tryCatchBlocks;
+    @SuppressWarnings("unchecked")
+	private void assignCatchHandlers() {
+        ArrayList<TryCatchBlockNode> tcbs = (ArrayList<TryCatchBlockNode>) tryCatchBlocks;
         /// aargh. I'd love to create an array of Handler objects, but generics
         // doesn't care for it.
         if (tcbs.size() == 0) return;
         ArrayList<Handler> handlers= new ArrayList<Handler>(tcbs.size());
         
         for (int i = 0; i < tcbs.size(); i++) {
-            TryCatchBlockNode tcb = (TryCatchBlockNode)tcbs.get(i);
+            TryCatchBlockNode tcb = tcbs.get(i);
             handlers.add(new Handler(
                     getLabelPosition(tcb.start),
                     getLabelPosition(tcb.end) - 1, // end is inclusive
                     tcb.type, 
-                    getOrCreateBasicBlock(tcb.handler)));
+                    getOrCreateBasicBlock(tcb.handler.getLabel())));
         }
         for (BasicBlock bb : basicBlocks) {
             bb.chooseCatchHandlers(handlers);
@@ -388,6 +406,10 @@ public class MethodFlow extends MethodNode {
         return ret;
     }
     
+    int getLabelPosition(LabelNode l) {
+        return labelToPosMap.get(l.getLabel());
+    }
+    
     int getLabelPosition(Label l) {
         return labelToPosMap.get(l);
     }
@@ -459,7 +481,7 @@ public class MethodFlow extends MethodNode {
                 ? 0
                 : visibleParameterAnnotations.length;
         for (i = 0; i < n; ++i) {
-            List l = visibleParameterAnnotations[i];
+            List<?> l = visibleParameterAnnotations[i];
             if (l == null) {
                 continue;
             }
@@ -472,7 +494,7 @@ public class MethodFlow extends MethodNode {
                 ? 0
                 : invisibleParameterAnnotations.length;
         for (i = 0; i < n; ++i) {
-            List l = invisibleParameterAnnotations[i];
+            List<?> l = invisibleParameterAnnotations[i];
             if (l == null) {
                 continue;
             }
@@ -510,10 +532,12 @@ public class MethodFlow extends MethodNode {
                 ((LocalVariableNode) localVariables.get(i)).accept(mv);
             }
             // visits line numbers
+            /*
             n = lineNumbers == null ? 0 : lineNumbers.size();
             for (i = 0; i < n; ++i) {
                 ((LineNumberNode) lineNumbers.get(i)).accept(mv);
             }
+            */
             // visits maxs
             mv.visitMaxs(maxStack, maxLocals);
         }
@@ -542,9 +566,9 @@ public class MethodFlow extends MethodNode {
         } else if (value instanceof AnnotationNode) {
             AnnotationNode an = (AnnotationNode) value;
             an.accept(av.visitAnnotation(name, an.desc));
-        } else if (value instanceof List) {
+        } else if (value instanceof List<?>) {
             AnnotationVisitor v = av.visitArray(name);
-            List array = (List) value;
+            List<?> array = (List<?>) value;
             for (int j = 0; j < array.size(); ++j) {
                 acceptAnnotation(v, null, array.get(j));
             }
@@ -555,7 +579,7 @@ public class MethodFlow extends MethodNode {
     }
 
     public boolean isAbstract() {
-        return ((this.access & Constants.ACC_ABSTRACT) != 0);
+        return ((this.access & Opcodes.ACC_ABSTRACT) != 0);
     }
     public boolean isStatic() {
         return ((this.access & ACC_STATIC) != 0);
@@ -564,6 +588,11 @@ public class MethodFlow extends MethodNode {
     public boolean isBridge() {
         return ((this.access & ACC_VOLATILE) != 0);
     }
+
+	public Detector detector() {
+		return this.classFlow.detector();
+	}
+
 
 }
 

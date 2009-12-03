@@ -246,7 +246,8 @@ public class Frame {
         stacklen = 0;
     }
     
-    public boolean equals(Object other) {
+    @Override
+	public boolean equals(Object other) {
         Frame that = (Frame)other;
         for (int i = 0; i < locals.length; i++) {
             if (!locals[i].equals(that.locals[i])) return false;
@@ -257,14 +258,16 @@ public class Frame {
         return true;
     }
     
-    public int hashCode() {
+    @Override
+	public int hashCode() {
         int hash = 0;
         for (int i = 0; i < this.locals.length;i++) hash ^= this.locals[i].hashCode();
         for (int i = 0; i < this.stacklen;i++) hash ^= this.locals[i].hashCode();
         return hash;
     }
     
-    public String toString() {
+    @Override
+	public String toString() {
         StringBuffer sb = new StringBuffer(100);
         int numDefined = 0;
         sb.append("): ");

@@ -35,18 +35,18 @@ public interface Constants extends Opcodes {
     String D_THROWABLE      = "Ljava/lang/Throwable;";
     String D_UNDEFINED      = "UNDEFINED";
 
-    String D_FIBER          = "Lkilim/Fiber;";
-    String D_STATE          = "Lkilim/State;";
-    String D_TASK           = "Lkilim/Task;";
-    String D_PAUSABLE       = "Lkilim/Pausable;";
-
     String THROWABLE_CLASS  = "java/lang/Throwable";
-    String FIBER_CLASS      = "kilim/Fiber";
-    String STATE_CLASS      = "kilim/State";
-    String TASK_CLASS       = "kilim/Task";
-    String PAUSABLE_CLASS   = "kilim/Pausable";
-    String NOT_PAUSABLE_CLASS   = "kilim/NotPausable";
+    String FIBER_CLASS      = Fiber.class.getName().replace('.', '/');
+    String STATE_CLASS      = State.class.getName().replace('.', '/');
+    String TASK_CLASS       = Task.class.getName().replace('.', '/');
+    String PAUSABLE_CLASS   = Pausable.class.getName().replace('.', '/');
+    String NOT_PAUSABLE_CLASS = NotPausable.class.getName().replace('.', '/');
     
+    String D_FIBER          = "L"+FIBER_CLASS+";";
+    String D_STATE          = "L"+STATE_CLASS+";";
+    String D_TASK           = "L"+TASK_CLASS+";";
+    String D_PAUSABLE       = "L"+PAUSABLE_CLASS+";";
+
     String  WOVEN_FIELD     = "$isWoven";
 
     // Constant opcodes missing from asm's opcodes (as of asm 3.0)

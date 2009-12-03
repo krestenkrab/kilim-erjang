@@ -25,6 +25,6 @@ package kilim;
  */
 
 public class State {
-    public int pc;
-    public Object self;
+    //public int pc;
+    //public Object self;
 }

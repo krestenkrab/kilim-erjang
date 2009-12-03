@@ -31,6 +31,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LocalVariableNode;
@@ -124,7 +125,7 @@ public class MethodWeaver {
         n = mf.visibleParameterAnnotations == null ? 0
                 : mf.visibleParameterAnnotations.length;
         for (i = 0; i < n; ++i) {
-            List l = mf.visibleParameterAnnotations[i];
+            List<?> l = mf.visibleParameterAnnotations[i];
             if (l == null) {
                 continue;
             }
@@ -136,7 +137,7 @@ public class MethodWeaver {
         n = mf.invisibleParameterAnnotations == null ? 0
                 : mf.invisibleParameterAnnotations.length;
         for (i = 0; i < n; ++i) {
-            List l = mf.invisibleParameterAnnotations[i];
+            List<?> l = mf.invisibleParameterAnnotations[i];
             if (l == null) {
                 continue;
             }
@@ -155,7 +156,7 @@ public class MethodWeaver {
         mv.visitCode();
         visitTryCatchBlocks(mv);
         visitInstructions(mv);
-        visitLineNumbers(mv);
+        //visitLineNumbers(mv);
         visitLocals(mv);
         mv.visitMaxs(maxStack, maxVars);
     }
@@ -167,12 +168,14 @@ public class MethodWeaver {
         }
     }
 
+    /*
     private void visitLineNumbers(MethodVisitor mv) {
-        for (Object l: methodFlow.lineNumbers) {
+        for (Object l: methodFlow.lineNumbers()) {
             ((LineNumberNode)l).accept(mv);
         }
     }
-
+*/
+    
     private void visitInstructions(MethodVisitor mv) {
         //TODO gen code for pausable JSRs 
         genPrelude(mv);
@@ -481,7 +484,7 @@ public class MethodWeaver {
         if (classWeaver.isInterface()) return;
         // Turn of abstract modifier
         int access = mf.access;
-        access &= ~Constants.ACC_ABSTRACT;
+        access &= ~Opcodes.ACC_ABSTRACT;
         MethodVisitor mv = cv.visitMethod(access, mf.name, mf.desc, 
                 mf.signature, ClassWeaver.toStringArray(mf.exceptions));
         mv.visitCode();
@@ -504,7 +507,7 @@ public class MethodWeaver {
         }
         
         int numlocals;
-        if ((mf.access & Constants.ACC_ABSTRACT) != 0) {
+        if ((mf.access & Opcodes.ACC_ABSTRACT) != 0) {
             // The abstract method doesn't contain the number of locals required to hold the
             // args, so we need to calculate it.
             numlocals = getNumWordsInSig() + 1 /* fiber */;

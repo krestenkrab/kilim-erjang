@@ -31,20 +31,25 @@ public class ClassWeaver {
     List<ClassInfo> classInfoList = new LinkedList<ClassInfo>();
     static HashSet<String> stateClasses = new HashSet<String>();
 
-    public ClassWeaver(InputStream is) throws IOException {
-        classFlow = new ClassFlow(is);
+    public ClassWeaver(byte[] data, Detector detector) {
+        classFlow = new ClassFlow(data, detector);
         weave();
     }
     
-    public ClassWeaver(String className) throws IOException {
-        classFlow = new ClassFlow(className);
+    public ClassWeaver(InputStream is, Detector detector) throws IOException {
+        classFlow = new ClassFlow(is, detector);
+        weave();
+    }
+    
+    public ClassWeaver(String className, Detector detector) throws IOException {
+        classFlow = new ClassFlow(className, detector);
         weave();
     }
     
     private void weave() throws KilimException {
         classFlow.analyze(false);
         if (classFlow.isPausable() && needsWeaving()) {
-            ClassWriter cw = new ClassWriter(false);
+            ClassWriter cw = new ClassWriter(0);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -182,7 +187,7 @@ public class ClassWeaver {
             return className;
         }
         stateClasses.add(className);
-        ClassWriter cw = new ClassWriter(false);
+        ClassWriter cw = new ClassWriter(0);
         cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
         // Create default constructor
