@@ -77,7 +77,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             int n = numMsgs;
             if (n > 0) {
                 int ic = icons;
-                msg = msgs[ic];
+                msg = msgs[ic]; msgs[ic]=null;
                 icons = (ic + 1) % msgs.length;
                 numMsgs = n - 1;
                 
