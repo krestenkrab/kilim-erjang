@@ -81,7 +81,7 @@ public final class Fiber {
     /*
      * Pausing, and need to save state before returning
      */
-    private static final int   PAUSING__NO_STATE      = 2;
+    static final int   PAUSING__NO_STATE      = 2;
     
     /*
      * Pausing, and have saved state from an earlier invocation,

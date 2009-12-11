@@ -74,7 +74,7 @@ public class ClassFlow extends ClassNode {
 
 	public ArrayList<MethodFlow> analyze(boolean forceAnalysis) throws KilimException {
 //        cr.accept(this, ClassReader.SKIP_DEBUG);
-        cr.accept(this, true);
+        cr.accept(this, false);
         for (Object o: this.fields) {
             FieldNode fn = (FieldNode)o;
             if (fn.name.equals(Constants.WOVEN_FIELD)) {

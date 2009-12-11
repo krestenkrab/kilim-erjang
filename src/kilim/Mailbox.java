@@ -106,6 +106,16 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         }
     }
 
+    /**
+     * @return non-null message.
+     * @throws Pausable
+     */
+    public void untilHasMessages(int num) throws Pausable{
+        while (hasMessages(num, Task.getCurrentTask()) == false) {
+            Task.pause(this);
+        }
+    }
+
 
     /**
      * @return non-null message.
@@ -114,7 +124,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     public boolean untilHasMessage(long timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         boolean has_msg = hasMessage(t);
-        long begin = System.currentTimeMillis();
+        long end = System.currentTimeMillis() + timeoutMillis;
         while (has_msg == false) {
             TimerTask tt = new TimerTask() {
                 public void run() {
@@ -125,10 +135,40 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
             tt.cancel();
-            if (System.currentTimeMillis() - begin > timeoutMillis) {
+            has_msg = hasMessage(t);
+            timeoutMillis = end - System.currentTimeMillis();
+            if (timeoutMillis <= 0) {
+            	removeMsgAvailableListener(t);
                 break;
             }
-            has_msg = hasMessage(t);
+        }
+        return has_msg;
+    }
+    
+    /**
+     * @return non-null message.
+     * @throws Pausable
+     */
+    public boolean untilHasMessages(int num, long timeoutMillis) throws Pausable {
+        final Task t = Task.getCurrentTask();
+        boolean has_msg = hasMessages(num, t);
+        long end = System.currentTimeMillis() + timeoutMillis;
+        while (has_msg == false) {
+            TimerTask tt = new TimerTask() {
+                public void run() {
+                    Mailbox.this.removeMsgAvailableListener(t);
+                    t.onEvent(Mailbox.this, timedOut);
+                }
+            };
+            Task.timer.schedule(tt, timeoutMillis);
+            Task.pause(this);
+            tt.cancel();
+            has_msg = hasMessages(num, t);
+            timeoutMillis = end - System.currentTimeMillis();
+            if (timeoutMillis <= 0) {
+            	removeMsgAvailableListener(t);
+                break;
+            }
         }
         return has_msg;
     }
@@ -154,19 +194,56 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         return has_msg;
     }
     
+    public boolean hasMessages(int num, EventSubscriber eo) {
+        boolean has_msg;
+        synchronized(this) {
+            int n = numMsgs;
+            if (n >= num) {
+            	has_msg = true;
+            } else {
+                has_msg = false;
+                addMsgAvailableListener(eo);
+            }
+        }
+        return has_msg;
+    }
+    
     /**
      * Non-blocking, nonpausing peek. 
      * @return buffered message if there's one, or null 
      */
-    public T peek() {
+    public T peek(int idx) {
+    	assert idx >= 0 : "negative index";
         T msg;
         synchronized(this) {
             int n = numMsgs;
-            if (n > 0) {
+			if (idx < n) {
                 int ic = icons;
-                msg = msgs[ic];
+                msg = msgs[(ic+idx)%msgs.length];
             } else {
                 msg = null;
+            }
+        }
+        return msg;
+    }
+    
+    public T remove(final int idx) {
+    	assert idx >= 0 : "negative index";
+    	T msg;
+        synchronized(this) {
+        	int n = numMsgs;
+            if (idx < n) {
+                int ic = icons;
+                int mlen = msgs.length;
+				msg = msgs[(ic+idx)%mlen];
+                for (int i = idx; i > 0; i--) {
+                	msgs[(ic+i)%mlen] = msgs[(ic+i-1)%mlen];
+                }
+                msgs[icons] = null;
+                numMsgs -= 1;
+                icons = (icons+1)%mlen;
+            } else {
+                throw new IllegalStateException();
             }
         }
         return msg;
@@ -256,7 +333,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     public T get(long timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         T msg = get(t);
-        long begin = System.currentTimeMillis();
+        long end = System.currentTimeMillis() + timeoutMillis;
         while (msg == null) {
             TimerTask tt = new TimerTask() {
                 public void run() {
@@ -267,10 +344,14 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
             tt.cancel();
-            if (System.currentTimeMillis() - begin > timeoutMillis) {
+            
+            msg = get(t);
+            
+            timeoutMillis = end - System.currentTimeMillis();
+            if (timeoutMillis <= 0) {
+            	removeMsgAvailableListener(t);
                 break;
             }
-            msg = get(t);
         }
         return msg;
     }
@@ -402,6 +483,11 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         return numMsgs > 0;
     }
 
+    /** return true if the mailbox has at least <code>num</code> messages. */
+    public synchronized boolean hasMessages(int num) {
+        return numMsgs >= num;
+    }
+
     public synchronized boolean hasSpace() {
         return (maxMsgs - numMsgs) > 0;
     }
@@ -454,6 +540,17 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         synchronized(this) {
             return (t == sink) || srcs.contains(t);
         } 
+    }
+    
+    public synchronized Object[] messages() {
+    	synchronized (this) {
+			Object[] result = new Object[numMsgs];
+			for (int i = 0; i < numMsgs; i++) {
+				result[i] = msgs[(icons+i)%msgs.length];
+			}
+			return result;
+		}
+    	
     }
 }
 

@@ -165,9 +165,11 @@ public abstract class Task implements EventSubscriber {
     public void onEvent(EventPublisher ep, Event e) {
         // This is sneaky. We _know_ that the only time a task will get registered 
         // is mailbox.put or get(), and that it'll be the pausereason as well. 
-        if (ep == pauseReason) {
+    	// @drkrab: no we don't!  This can be a timedOut event, and that also
+    	// needs us to resume.
+        //if (ep == pauseReason) {
             resume();
-        }
+        //}
     }
     /**
      * This is typically called by a pauseReason to resume the task.
