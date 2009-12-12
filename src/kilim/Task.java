@@ -26,6 +26,18 @@ public abstract class Task implements EventSubscriber {
      */
     public final int           id;
     static final AtomicInteger idSource = new AtomicInteger();
+    
+    public static final int PRIORITY_MAX = 0;
+    public static final int PRIORITY_HIGH = 1;
+    public static final int PRIORITY_NORMAL = 2;
+    public static final int PRIORITY_LOW = 3;
+
+    /**
+     * The priority of this task.  
+     * One of {@link #PRIORITY_MAX}, {@link #PRIORITY_HIGH}, 
+     * {@link #PRIORITY_NORMAL} or {@link #PRIORITY_LOW}.
+     */
+    int priority = PRIORITY_NORMAL;
 
     /**
      * The stack manager in charge of rewinding and unwinding
@@ -82,8 +94,6 @@ public abstract class Task implements EventSubscriber {
     public    Object           exitResult = "OK";
 
     
-	private   Error 		   death_ex;
-
     // TODO: move into a separate timer service or into the schduler.
     public final static Timer timer = new Timer(true);
 
@@ -123,22 +133,10 @@ public abstract class Task implements EventSubscriber {
         return this;
     }
     
-    /** 
-     * Used to make an exception happen inside this task
-     * @param ex
-     */
-    public void kill(Error ex) {
-		System.err.println("killing "+this+" setting "+death_ex);
-
-    	this.death_ex = ex;
-    	resume();
-    }
-    
-    public void checkKill() {
-    	if (this.death_ex != null) {
-    		// System.err.println("killing "+this+": throw "+death_ex);
-    		throw this.death_ex;
-    	}
+    /** can be overridden in subclasses to check if the task needs killing,
+     * which is done by simply throwing some subclass of java.lang.Error 
+     * from here. */
+    public void checkKill() throws java.lang.Error {
     }
     
     /**
@@ -343,6 +341,24 @@ public abstract class Task implements EventSubscriber {
         return pauseReason;
     }
 
+
+    /**
+     * We only allow a task to set this on itself, so that
+     * it does not happen while it is runnable [in the priority queue],
+     * which would invalidate the internal invsariants of the queue.
+     * 
+     * @param value
+     * @param f
+     * @throws Pausable
+     */
+    public final void setPriority(int value) throws Pausable {
+    	assert Task.getCurrentTask() == this : "task can only call setPriority this on self";
+    	this.priority = value;
+    }
+    
+    public final int getPriority() {
+    	return priority;
+    }
     
     public synchronized boolean isDone() {
         return done;

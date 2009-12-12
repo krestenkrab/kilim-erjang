@@ -151,8 +151,9 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      */
     public boolean untilHasMessages(int num, long timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
+        final long end = System.currentTimeMillis() + timeoutMillis;
+        
         boolean has_msg = hasMessages(num, t);
-        long end = System.currentTimeMillis() + timeoutMillis;
         while (has_msg == false) {
             TimerTask tt = new TimerTask() {
                 public void run() {
