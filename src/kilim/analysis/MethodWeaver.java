@@ -184,7 +184,7 @@ public class MethodWeaver {
         for (BasicBlock bb : mf.getBasicBlocks()) {
             int from = bb.startPos;
             
-            if (bb.isPausable()) {
+            if (bb.isPausable() && bb.startFrame != null) {
                 genPausableMethod(mv, bb);
                 from = bb.startPos + 1; // first instruction is consumed
             } else if (bb.isCatchHandler()) {
@@ -286,7 +286,7 @@ public class MethodWeaver {
     private void createCallWeavers() {
         MethodFlow mf = methodFlow;
         for (BasicBlock bb : mf.getBasicBlocks()) {
-            if (!bb.isPausable()) continue;
+            if (!bb.isPausable() || bb.startFrame==null) continue;
             // No prelude needed for Task.getCurrentTask(). 
             if (bb.isGetCurrentTask()) continue; 
             CallWeaver cw = new CallWeaver(this, bb);
