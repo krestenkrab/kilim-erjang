@@ -526,7 +526,7 @@ public class CallWeaver {
                 mv.visitInsn(ALOAD_0); // for state.self == this
             }
             
-            int pc = methodWeaver.getPC(this);
+            int pc = getPC();
             if (pc < 6) {
             	mv.visitInsn(ICONST_0 + pc);
             } else {
@@ -599,7 +599,7 @@ public class CallWeaver {
             mv.visitInsn(ALOAD_0); // for state.self == this
         }
         
-        int pc = methodWeaver.getPC(this);
+        int pc = getPC();
         if (pc < 6) {
         	mv.visitInsn(ICONST_0 + pc);
         } else {
@@ -633,6 +633,10 @@ public class CallWeaver {
             mv.visitInsn(VMType.retInsn[vmt]);
         }
     }
+
+	int getPC() {
+		return methodWeaver.getPC(this);
+	}
 
     /**
      * Not yielding (resuming normally), but have stored state. We need to

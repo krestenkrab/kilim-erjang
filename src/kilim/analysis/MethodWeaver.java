@@ -24,6 +24,8 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -218,7 +220,9 @@ public class MethodWeaver {
                     if (cwList == null) {
                         cwList = new ArrayList<CallWeaver>(callWeavers.size()); 
                     }
-                    cwList.add(cw);
+                    if (!cwList.contains(cw)) {
+                    	cwList.add(cw);
+                    }
                 }
             }
         }
@@ -411,12 +415,39 @@ public class MethodWeaver {
         VMType.loadVar(mv, VMType.TOBJECT, getFiberVar());
         mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "upEx", "()I");
         // fiber.pc is on stack
-        Label[] labels = new Label[cwList.size() + 1];
-        labels[0] = resumeLabel;
+        
+        
+        
+        Collections.sort(cwList, new Comparator<CallWeaver>() {
+			public int compare(CallWeaver o1, CallWeaver o2) {
+				int pc1 = o1.getPC();
+				int pc2 = o2.getPC();
+				
+				if (pc1==pc2) return 0;
+				if (pc1<pc2) return -1;
+				return 1;
+			}
+		});
+        
+        // does the block with pc=0 appear in the list?
         for (int i = 0; i < cwList.size(); i++) {
-            labels[i + 1] = new Label();
+        	if (cwList.get(i).getPC() == 0) {
+        		cwList.remove(i);
+        		break;
+        	}
         }
-        mv.visitTableSwitchInsn(0, cwList.size(), resumeLabel, labels);
+        
+        Label[] labels = new Label[cwList.size() + 1];
+        int[] pcvals = new int[cwList.size() + 1];
+        labels[0] = resumeLabel;
+        pcvals[0] = 0;
+        for (int i = 0; i < cwList.size(); i++) {
+        	CallWeaver cw = cwList.get(i);
+        	labels[i+1] = new Label();
+        	pcvals[i+1] = cw.getPC();
+        }
+        
+        mv.visitLookupSwitchInsn(resumeLabel, pcvals, labels);
         int i = 1;
         for (CallWeaver cw: cwList) {
             if (i > 1) {

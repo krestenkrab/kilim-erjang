@@ -151,8 +151,10 @@ public final class Fiber {
 //                if (debug) ds();
                 return NOT_PAUSING__NO_STATE;
             } else {
-                stack[d] = null; // clean up
                 pc = pcStack[d];
+                stack[d] = null; // clean up
+                selfStack[d] = null;
+                pcStack[d] = 0;
 //                if (debug) System.out.println("\nup(not pausing)" + this);;
 //                if (debug) ds();
                 return NOT_PAUSING__HAS_STATE;
@@ -174,6 +176,7 @@ public final class Fiber {
         if (isDone) {
             // clean up callee's state
             stateStack[0] = null;
+            selfStack[0] = null;
         }
         // reset pausing for next round.
         isPausing = false;
@@ -244,16 +247,18 @@ public final class Fiber {
     public int upEx() {
         // compute new iStack. 
         final int is = task.getStackDepth() - 2; // remove upEx and convert to 0-based index. 
-        State cs = stateStack[is];
+        final State cs = stateStack[is];
+        final int pc = pcStack[is];
 
         for (int i = iStack; i >= is; i--) {
             stateStack[i] = null; // release state
             selfStack[i] = null; // release state
+            pcStack[i] = 0;
         }
 
         iStack = is;
         curState = cs;
-        return (cs == null) ? 0 : pcStack[is];
+        return (cs == null) ? 0 : pc;
     }
     
     /**
@@ -333,6 +338,8 @@ public final class Fiber {
             assert curState == PAUSE_STATE : 
             	"togglePause: Expected PAUSE_STATE, instead got: iStack == " + iStack + ", state = " + curState;
             stateStack[iStack] = null;
+            selfStack[iStack] = null;
+            pcStack[iStack] = 0;
             isPausing = false;
         }
     }
