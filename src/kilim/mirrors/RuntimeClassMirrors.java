@@ -85,6 +85,16 @@ class RuntimeClassMirrors extends Mirrors {
 			if (clazz == null) throw new NullPointerException();
 			this.clazz = clazz;
 		}
+		
+		@Override
+		public String getName() {
+			return clazz.getName();
+		}
+		
+		@Override
+		public boolean isInterface() {
+			return clazz.isInterface();
+		}
 
 		@Override
 		public boolean equals(Object obj) {

@@ -10,4 +10,8 @@ public abstract class ClassMirror {
 
 	public abstract ClassMirror[] getInterfaces();
 
+	public abstract boolean isInterface();
+
+	public abstract String getName();
+
 }

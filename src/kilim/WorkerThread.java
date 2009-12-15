@@ -6,8 +6,10 @@
 
 package kilim;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.PriorityQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class WorkerThread extends Thread {
@@ -17,7 +19,16 @@ public class WorkerThread extends Thread {
      * by kilim.ReentrantLock and Task to ensure that lock.release() is
      * done on the same thread as lock.acquire()
      */
-    RingQueue<Task> tasks = new RingQueue<Task>(10);
+    PriorityQueue<Task> tasks = new PriorityQueue<Task>(10, new Comparator<Task>() {
+
+		public int compare(Task o1, Task o2) {
+			if (o1.priority < o2.priority)
+				return -1;
+			else if (o1.priority == o2.priority) 
+				return 0;
+			else
+				return 1;
+		}});
     Scheduler scheduler;
 
     public int numResumes = 0;
@@ -47,7 +58,7 @@ public class WorkerThread extends Thread {
     
     public synchronized void addRunnableTask(Task t) {
         assert t.preferredResumeThread == null || t.preferredResumeThread == this : "Task given to wrong thread";
-        tasks.put(t);
+        tasks.add(t);
         notify();
     }
 
@@ -55,13 +66,17 @@ public class WorkerThread extends Thread {
     	return tasks.size() > 0;
     }
     public synchronized Task getNextTask() {
-        return tasks.get();
+        Task task = tasks.peek();
+        if (task != null) {
+        	tasks.remove(task);
+        }
+        return task;
     }
         
     public synchronized void waitForMsgOrSignal() {
         try {
             if (tasks.size() == 0) {
-                wait();
+                wait(100); // sleep 100ms
             }
         } catch (InterruptedException ignore) {}
     }

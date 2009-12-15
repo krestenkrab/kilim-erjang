@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import kilim.Constants;
+import kilim.mirrors.ClassMirror;
+import kilim.mirrors.ClassMirrorNotFoundException;
 
 import org.objectweb.asm.Type;
 
@@ -205,9 +207,6 @@ public class TypeDesc {
         throw new IncompatibleTypesException("" + a + "," + b);
     }
     
-    private static String toClassName(String s) {
-        return s.replace('/','.').substring(1,s.length()-1);
-    }
     static String JAVA_LANG_OBJECT = "java.lang.Object"; 
     
     // public for testing purposes
@@ -216,48 +215,15 @@ public class TypeDesc {
             if (oa == D_OBJECT || ob == D_OBJECT) return D_OBJECT;
             if (oa.equals(ob)) return oa;
             
-            String a = toClassName(oa);
-            String b = toClassName(ob);
-            Class<?> ca = Class.forName(a);
-            Class<?> cb = Class.forName(b);
-            if (ca.isAssignableFrom(cb)) return oa;
-            if (cb.isAssignableFrom(ca)) return ob;
-            if (ca.isInterface() && cb.isInterface()) {
-                return D_OBJECT; // This is what the java bytecode verifier does
-            }
-            ArrayList<String> sca = getSuperClasses(ca);
-            ArrayList<String> scb = getSuperClasses(cb);
-            int lasta = sca.size()-1;
-            int lastb = scb.size()-1;
-            do {
-                if (sca.get(lasta).equals(scb.get(lastb))) {
-                    lasta--;
-                    lastb--;
-                } else {
-                    break;
-                }
-            } while (lasta >= 0 && lastb >= 0);
-            return toDesc(sca.get(lasta+1));
-        } catch (ClassNotFoundException cnfe) {
+            String lub = Detector.getDetector().commonSuperType(oa, ob);
+            
+            return lub; 
+
+        } catch (ClassMirrorNotFoundException cnfe) {
             throw new InternalError(cnfe.getMessage());
         }
     }
     
-    private static ArrayList<String> getSuperClasses(Class<?> c) {
-        ArrayList<String> ret = new ArrayList<String>(3);
-        while (c != null) {
-            ret.add(c.getName());
-            c = c.getSuperclass();
-        }
-        return ret;
-        
-    }
-    
-    private static String toDesc(String name) {
-        return (name.equals(JAVA_LANG_OBJECT)) ?
-                D_OBJECT : "L" + name.replace('.', '/') + ';';
-    }
-
     public static boolean isIntType(String typeDesc) {
         return (typeDesc == D_INT ||
                 typeDesc == D_CHAR || 

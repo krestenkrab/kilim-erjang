@@ -71,9 +71,13 @@ public class ClassFlow extends ClassNode {
         assert (methodFlows != null): "ClassFlow.analyze not called";
         return methodFlows;
     }
-
+    
 	public ArrayList<MethodFlow> analyze(boolean forceAnalysis) throws KilimException {
 //        cr.accept(this, ClassReader.SKIP_DEBUG);
+		
+		Detector save = Detector.setDetector(detector);
+		try {
+		
         cr.accept(this, false);
         for (Object o: this.fields) {
             FieldNode fn = (FieldNode)o;
@@ -109,6 +113,10 @@ public class ClassFlow extends ClassNode {
         }
         methodFlows = flows;
         return flows;
+        
+		} finally {
+			Detector.setDetector(save);
+		}
     }
     
     private MethodFlow getOrigWithSameSig(MethodFlow bridgeMethod) {

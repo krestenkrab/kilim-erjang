@@ -70,8 +70,7 @@ public class Scheduler {
         synchronized(this) {
             assert t.running == true :  "Task " + t + " scheduled even though running is false";
             runnableTasks.add(t);
-            if (!waitingThreads.isEmpty())
-                wt = waitingThreads.poll();
+            wt = waitingThreads.poll();
         }
         if (wt != null) {
             synchronized(wt) {
@@ -103,11 +102,14 @@ public class Scheduler {
                 if (t == null) {
                     waitingThreads.add(wt);
                 } else {
-                	Task tt = runnableTasks.remove();
-                	assert t == tt : "queue not in order?"; 
+                	boolean removed = runnableTasks.remove(t);
+                	assert removed : "queue not in order?"; 
                     prefThread = t.preferredResumeThread;
                 }
             }
+            /////////////
+            // race here: added to waiting threads above, 
+            // and received notify before entering waitForMsg
             /////////////
             if (t == null) {
                 wt.waitForMsgOrSignal();                

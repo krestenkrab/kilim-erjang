@@ -4,6 +4,10 @@
  * specified in the file "License"
  */
 package kilim.analysis;
+import static kilim.Constants.D_OBJECT;
+
+import java.util.ArrayList;
+
 import kilim.Constants;
 import kilim.NotPausable;
 import kilim.Pausable;
@@ -128,4 +132,74 @@ public class Detector {
         default: throw new AssertionError("Unknown status");
         }
     }
+    
+
+    static private final ThreadLocal<Detector> DETECTOR = new ThreadLocal<Detector>();
+    
+    static Detector getDetector() {
+    	Detector d = DETECTOR.get();
+    	if (d == null) return Detector.DEFAULT;
+    	return d;
+    }
+
+    static Detector setDetector(Detector d) {
+    	Detector res = DETECTOR.get();
+    	DETECTOR.set(d);
+    	return res;
+    }
+
+	public String commonSuperType(String oa, String ob) throws ClassMirrorNotFoundException {
+        String a = toClassName(oa);
+        String b = toClassName(ob);
+        
+        try {
+	        ClassMirror ca = mirrors.classForName(a);
+	        ClassMirror cb = mirrors.classForName(b);
+	        if (ca.isAssignableFrom(cb)) return oa;
+	        if (cb.isAssignableFrom(ca)) return ob;
+	        if (ca.isInterface() && cb.isInterface()) {
+	            return D_OBJECT; // This is what the java bytecode verifier does
+	        }
+        } catch (ClassMirrorNotFoundException e) {
+        	// try to see if the below works...
+        }
+        
+        ArrayList<String> sca = getSuperClasses(a);
+        ArrayList<String> scb = getSuperClasses(b);
+        int lasta = sca.size()-1;
+        int lastb = scb.size()-1;
+        do {
+            if (sca.get(lasta).equals(scb.get(lastb))) {
+                lasta--;
+                lastb--;
+            } else {
+                break;
+            }
+        } while (lasta >= 0 && lastb >= 0);
+        return toDesc(sca.get(lasta+1));		
+	}
+	
+
+    public ArrayList<String> getSuperClasses(String cc) throws ClassMirrorNotFoundException {
+    	ClassMirror c = mirrors.classForName(cc);
+        ArrayList<String> ret = new ArrayList<String>(3);
+        while (c != null) {
+            ret.add(c.getName());
+            c = c.getSuperclass();
+        }
+        return ret;
+        
+    }
+    
+    private static String toDesc(String name) {
+        return (name.equals(JAVA_LANG_OBJECT)) ?
+                D_OBJECT : "L" + name.replace('.', '/') + ';';
+    }
+
+    private static String toClassName(String s) {
+        return s.replace('/','.').substring(1,s.length()-1);
+    }
+    
+    static String JAVA_LANG_OBJECT = "java.lang.Object"; 
+
 }
