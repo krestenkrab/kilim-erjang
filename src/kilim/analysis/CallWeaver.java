@@ -227,7 +227,8 @@ public class CallWeaver {
         for (; i < f.getMaxLocals(); i++) {
             Value v = f.getLocal(i);
             if (u.isLiveIn(i)) {
-                if (!(v.isConstant() || valInfoList.contains(v))) {
+                if (!(v.isConstant() || valInfoList.contains(v))
+                	&& v.getTypeDesc() != D_UNDEFINED) {
                     ValInfo vi = new ValInfo(v);
                     vi.var = i;
                     valInfoList.add(vi);
@@ -941,7 +942,7 @@ class ValInfo implements Comparable<ValInfo> {
     /**
      * The type of value boiled down to one of the canonical types.
      */
-    int    vmt;
+    final int    vmt;
 
     /**
      * Names of the fields in the state var: "f0", "f1", etc, according to their
@@ -952,6 +953,9 @@ class ValInfo implements Comparable<ValInfo> {
     ValInfo(Value v) {
         val = v;
         vmt = VMType.toVmType(v.getTypeDesc());
+        
+        if (vmt < 0 || vmt > 4)
+        	throw new InternalError();
     }
 
     String fieldDesc() {
