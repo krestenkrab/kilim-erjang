@@ -188,17 +188,30 @@ public abstract class Task implements EventSubscriber {
         }
     }
     
-    public void informOnExit(Mailbox<ExitMsg> exit) {
-        if (isDone()) {
-            exit.putnb(new ExitMsg(this, exitResult));
-            return;
-        }
-        synchronized (this) {
-            if (exitMBs == null) exitMBs = new LinkedList<Mailbox<ExitMsg>>();
-            exitMBs.add(exit);
+    public synchronized void informOnExit(Mailbox<ExitMsg> exit) {
+	if (isDone()) {
+	    exit.putnb(new ExitMsg(this, exitResult));
+	    return;
+	} else {
+	    if (exitMBs == null) exitMBs = new LinkedList<Mailbox<ExitMsg>>();
+	    exitMBs.add(exit);
         }
     }
-    
+
+    public synchronized void informOfExit(TaskDoneReason doneReason) {
+	if (exitMBs != null) {
+	    if (doneReason != null) {
+		exitResult = doneReason.exitObj;
+	    }
+	    ExitMsg msg = new ExitMsg(this, exitResult);
+	    for (Mailbox<ExitMsg> exitMB: exitMBs) {
+		exitMB.putnb(msg);
+	    }
+	}
+	done = true;
+    }
+
+
     /**
      * This is a placeholder that doesn't do anything useful.
      * Weave replaces the call in the bytecode from
@@ -394,15 +407,7 @@ public abstract class Task implements EventSubscriber {
             if (numActivePins > 0) {
                 throw new AssertionError("Task ended but has active locks");
             }
-            if (exitMBs != null) {
-                if (pauseReason instanceof TaskDoneReason) {
-                    exitResult = ((TaskDoneReason)pauseReason).exitObj;
-                }
-                ExitMsg msg = new ExitMsg(this, exitResult);
-                for (Mailbox<ExitMsg> exitMB: exitMBs) {
-                    exitMB.putnb(msg);
-                }
-            }
+	    informOfExit((TaskDoneReason)pauseReason);
             preferredResumeThread = null;
         } else {
             if (thread != null) { // it is null for generators
