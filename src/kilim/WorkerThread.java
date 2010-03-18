@@ -66,11 +66,8 @@ public class WorkerThread extends Thread {
     	return tasks.size() > 0;
     }
     public synchronized Task getNextTask() {
-        Task task = tasks.peek();
-        if (task != null) {
-        	tasks.remove(task);
-        }
-        return task;
+    	Task task = tasks.poll();
+    	return task;
     }
         
     public synchronized void waitForMsgOrSignal() {

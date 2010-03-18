@@ -764,6 +764,8 @@ public class CallWeaver {
             if (!u.isLiveIn(i))
                 continue;
             Value v = f.getLocal(i);
+            if (v.getTypeDesc() == D_UNDEFINED)
+            	continue;
             int vmt = VMType.toVmType(v.getTypeDesc());
             if (v.isConstant()) {
                 loadConstant(mv, v);
