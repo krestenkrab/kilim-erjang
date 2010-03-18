@@ -102,32 +102,6 @@ public class TestMailbox extends TestCase {
         assertTrue(mb.getnb() == null); 
     }
     
-    // Send messages on two mailboxes and collect them back on one mailbox.
-    public void testSelectSimple() {
-        Mailbox<Msg> mainmb = new Mailbox<Msg>();
-        SelectTaskMB t = new SelectTaskMB(mainmb);
-        t.start();
-
-        // Make sure the task is blocked on select and hasn't already
-        // sent us a message
-        try {Thread.sleep(100);} catch (InterruptedException ignore) {}
-        assertTrue(! mainmb.hasMessage());
-        HashSet<Msg> sentMsgs = new HashSet<Msg>();
-        final int n = 10;
-        for (int i = 0; i < n; i++) {
-            Msg m = new Msg();
-            assertTrue(t.mymb2.putnb(m));
-            sentMsgs.add(m);
-            try {Thread.sleep(10);} catch (InterruptedException ignore) {}
-            m = new Msg();
-            assertTrue(t.mymb1.putnb(m));
-            sentMsgs.add(m);
-        }
-        for (int i = 0; i < n*2; i++) {
-            Msg m = mainmb.getb(1000);
-            assertTrue(m != null && sentMsgs.contains(m));
-        }
-    }
 }
 
 class Msg {
@@ -166,36 +140,3 @@ class TaskMB extends Task {
 }
 
 
-
-class SelectTaskMB extends Task {
-    Mailbox<Msg> mymb1, mymb2;
-    Mailbox<Msg> mainmb;
-    
-    SelectTaskMB(Mailbox<Msg> mb) {
-        mymb1 = new Mailbox<Msg>();
-        mymb2 = new Mailbox<Msg>();
-        mainmb = mb;
-    }
-        
-    public void execute() throws Pausable  {
-        while (true) {
-            Msg m;
-            // Receive a message on mymb1 or 2 and forward to mainmb
-            // If some error, send a dummy message and testSelect()
-            // will flag an error.
-            switch (Mailbox.select(mymb1, mymb2)) {
-                case 0: 
-                    m = mymb1.getnb();
-                    mainmb.put(m);
-                    break;
-                case 1:
-                    m = mymb2.getnb();
-                    if (m == null) m = new Msg();
-                    mainmb.put(m);
-                    break;
-                default: 
-                    mainmb.put(new Msg());
-            }
-        }
-    }
-}

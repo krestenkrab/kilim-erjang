@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * provide a pausable execute method. 
  *
  */
-public abstract class Task implements EventSubscriber {
+public abstract class Task implements MessageConsumer, MessageProducer {
     public volatile Thread currentThread = null;
 
     static PauseReason         yieldReason = new YieldReason();
@@ -160,15 +160,25 @@ public abstract class Task implements EventSubscriber {
         throw new AssertionError("Expected task to be run by WorkerThread");
     }
     
-    public void onEvent(EventPublisher ep, Event e) {
-        // This is sneaky. We _know_ that the only time a task will get registered 
-        // is mailbox.put or get(), and that it'll be the pausereason as well. 
-    	// @drkrab: no we don't!  This can be a timedOut event, and that also
-    	// needs us to resume.
-        //if (ep == pauseReason) {
-            resume();
-        //}
+    public void consumeTimeout(Mailbox pub) {
+    	resume();
     }
+    
+    public void produceTimeout(Mailbox pub) {
+    	resume();
+    }
+    
+    public void messageAvailable(Mailbox ep) {
+    	ep.removeMessageConsumer(this);
+    	resume();
+    }
+
+    public void spaceAvailable(Mailbox ep) {
+    	ep.removeMessageProducer(this);
+    	resume();
+    }
+
+    
     /**
      * This is typically called by a pauseReason to resume the task.
      */

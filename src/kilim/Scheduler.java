@@ -8,7 +8,6 @@ package kilim;
 
 import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 
 /** 
  * This is a basic FIFO Executor. It maintains a list of
@@ -25,17 +24,7 @@ public class Scheduler {
     LinkedList<WorkerThread> allThreads = new LinkedList<WorkerThread>();
     LinkedList<WorkerThread> waitingThreads = new LinkedList<WorkerThread>();
     protected boolean shutdown = false;
-    // protected RingQueue<Task> runnableTasks = new RingQueue<Task>(1000);
-    protected PriorityQueue<Task> runnableTasks = new PriorityQueue<Task>(1000, new Comparator<Task>() {
-
-		public int compare(Task o1, Task o2) {
-			if (o1.priority < o2.priority)
-				return -1;
-			else if (o1.priority == o2.priority) 
-				return 0;
-			else
-				return 1;
-		}});
+    protected RingQueue<Task> runnableTasks = new RingQueue<Task>(1000);
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -69,8 +58,9 @@ public class Scheduler {
         
         synchronized(this) {
             assert t.running == true :  "Task " + t + " scheduled even though running is false";
-            runnableTasks.add(t);
-            wt = waitingThreads.poll();
+            runnableTasks.put(t);
+            if (!waitingThreads.isEmpty())
+                wt = waitingThreads.poll();
         }
         if (wt != null) {
             synchronized(wt) {
@@ -98,18 +88,13 @@ public class Scheduler {
                     return t;
                 }
 
-                t = runnableTasks.peek();
+                t = runnableTasks.get();
                 if (t == null) {
                     waitingThreads.add(wt);
                 } else {
-                	boolean removed = runnableTasks.remove(t);
-                	assert removed : "queue not in order?"; 
                     prefThread = t.preferredResumeThread;
                 }
             }
-            /////////////
-            // race here: added to waiting threads above, 
-            // and received notify before entering waitForMsg
             /////////////
             if (t == null) {
                 wt.waitForMsgOrSignal();                
