@@ -18,6 +18,20 @@ public class RingQueue<T> {
 
     public int size() {return size;}
 
+    public T peek() {
+        T elem;
+        T[] elems;
+        int n = size;
+        if (n > 0) {
+        	elems = elements;
+            int ic = icons;
+            elem = elems[ic];
+        } else {
+            elem = null;
+        }         
+        return elem;
+    }
+    
     public T get() {
         T elem;
         T[] elems;
