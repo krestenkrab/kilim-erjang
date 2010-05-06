@@ -1,6 +1,8 @@
 package kilim.analysis;
 
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -14,7 +16,7 @@ import org.objectweb.asm.tree.MethodNode;
  * of trying to classload it.
  */
 public class AsmDetector {
-    static HashMap<String, ClassCache> classCacheMap= new HashMap<String, ClassCache>();
+    static Map<String, ClassCache> classCacheMap= new WeakValueHashMap<String, ClassCache>();
     public static int getPausableStatus(String className, String methodName,
             String desc, Detector detector) 
     {
