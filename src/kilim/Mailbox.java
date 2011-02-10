@@ -128,17 +128,17 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 		final Task t = Task.getCurrentTask();
 		boolean has_msg = hasMessage(t);
 		long end = System.currentTimeMillis() + timeoutMillis;
+		int iteration = 0;
 		while (has_msg == false) {
-			TimerTask tt = new TimerTask() {
-				public void run() {
-					if (Mailbox.this.removeMessageConsumer(t)) {
-						t.consumeTimeout(Mailbox.this);
-					}
-				}
-			};
-			Task.timer.schedule(tt, timeoutMillis);
-			Task.pause(this);
-			tt.cancel();
+			if (++iteration <= 3) {
+				// Timer creation is costly, and frequently it has to
+				// be cancelled anyway.  Try to avoid it:
+				Task.yield();
+			} else {
+				TimerTask tt = startConsumerTimeoutTimer(t, timeoutMillis);
+				Task.pause(this);
+				tt.cancel();
+			}
 			has_msg = hasMessage(t);
 			timeoutMillis = end - System.currentTimeMillis();
 			if (timeoutMillis <= 0) {
@@ -159,20 +159,20 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 		final long end = System.currentTimeMillis() + timeoutMillis;
 
 		boolean has_msg = hasMessages(num, t);
+		int iteration = 0;
 		while (has_msg == false) {
-			TimerTask tt = new TimerTask() {
-				public void run() {
-					if (removeMessageConsumer(t)) {
-						t.consumeTimeout(Mailbox.this);
-					}
+			if (++iteration <= 3) {
+				// Timer creation is costly, and frequently it has to
+				// be cancelled anyway.  Try to avoid it:
+				Task.yield();
+			} else {
+				TimerTask tt = startConsumerTimeoutTimer(t, timeoutMillis);
+				Task.pause(this);
+				if (!tt.cancel()) {
+					removeMessageConsumer(t);
 				}
-			};
-			Task.timer.schedule(tt, timeoutMillis);
-			Task.pause(this);
-			if (!tt.cancel()) {
-				removeMessageConsumer(t);
 			}
-			
+
 			has_msg = hasMessages(num, t);
 			timeoutMillis = end - System.currentTimeMillis();
 			if (!has_msg && timeoutMillis <= 0) {
@@ -181,6 +181,18 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 			}
 		}
 		return has_msg;
+	}
+
+	private TimerTask startConsumerTimeoutTimer(final Task t, long timeoutMillis) {
+		TimerTask tt = new TimerTask() {
+			public void run() {
+				if (removeMessageConsumer(t)) {
+					t.consumeTimeout(Mailbox.this);
+				}
+			}
+		};
+		Task.timer.schedule(tt, timeoutMillis);
+		return tt;
 	}
 
 	/**
