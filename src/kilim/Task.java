@@ -374,8 +374,8 @@ public abstract class Task implements MessageConsumer, MessageProducer {
      * @param f
      * @throws Pausable
      */
-    public final void setPriority(int value) throws Pausable {
-    	assert Task.getCurrentTask() == this : "task can only call setPriority this on self";
+    public final void setPriority(int value) /*throws Pausable*/ {
+    	//assert Task.getCurrentTask() == this : "task can only call setPriority this on self";
     	this.priority = value;
     }
     
